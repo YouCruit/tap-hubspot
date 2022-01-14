@@ -53,6 +53,7 @@ CONFIG = {
     "subscription_chunk_size": DEFAULT_CHUNK_SIZE,
 
     # in config.json
+    "code": None,
     "redirect_uri": None,
     "client_id": None,
     "client_secret": None,
@@ -220,13 +221,17 @@ def load_schema(entity_name):
 #pylint: disable=invalid-name
 def acquire_access_token_from_refresh_token():
     payload = {
-        "grant_type": "refresh_token",
-        "redirect_uri": CONFIG['redirect_uri'],
-        "refresh_token": CONFIG['refresh_token'],
         "client_id": CONFIG['client_id'],
         "client_secret": CONFIG['client_secret'],
     }
 
+    if CONFIG['refresh_token']:
+        payload["refresh_token"] = CONFIG['refresh_token']
+        payload["grant_type"] = "refresh_token"
+    else:
+        payload["redirect_uri"] = CONFIG['redirect_uri']
+        payload["code"] = CONFIG['code']
+        payload["grant_type"] = "authorization_code"
 
     resp = requests.post(BASE_URL + "/oauth/v1/token", data=payload)
     if resp.status_code == 403:
@@ -1083,10 +1088,10 @@ def do_discover():
 
 def main_impl():
     args = utils.parse_args(
-        ["redirect_uri",
-         "client_id",
+        ["client_id",
          "client_secret",
-         "refresh_token",
+         "code",
+         "redirect_uri",
          "start_date"])
 
     CONFIG.update(args.config)

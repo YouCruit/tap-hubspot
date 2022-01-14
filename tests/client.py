@@ -1509,12 +1509,18 @@ class TestClient():
             hit issues with the relative import.
         """
         payload = {
-            "grant_type": "refresh_token",
-            "redirect_uri": self.CONFIG['redirect_uri'],
-            "refresh_token": self.CONFIG['refresh_token'],
             "client_id": self.CONFIG['client_id'],
             "client_secret": self.CONFIG['client_secret'],
         }
+
+        if 'refresh_token' in self.CONFIG:
+            payload["refresh_token"] = self.CONFIG['refresh_token']
+            payload["grant_type"] = "refresh_token"
+        else:
+            payload["redirect_uri"] = "https://www.google.com"
+            payload["code"] = "1"
+            payload["grant_type"] = "authorization_code"
+
 
         response = requests.post(BASE_URL + "/oauth/v1/token", data=payload)
         response.raise_for_status()
