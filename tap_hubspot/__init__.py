@@ -146,28 +146,10 @@ def get_field_type_schema(field_type):
     else:
         return {"type": ["null", "string"]}
 
-def get_field_schema(field_type, extras=False):
-    if extras:
-        return {
-            "type": "object",
-            "properties": {
-                "value": get_field_type_schema(field_type),
-                "timestamp": get_field_type_schema("datetime"),
-                "source": get_field_type_schema("string"),
-                "sourceId": get_field_type_schema("string"),
-            }
-        }
-    else:
-        return {
-            "type": "object",
-            "properties": {
-                "value": get_field_type_schema(field_type),
-            }
-        }
 
 def parse_custom_schema(entity_name, data):
     return {
-        field['name']: get_field_schema(field['type'], entity_name != 'contacts')
+        field['name']: get_field_type_schema(field['type'])
         for field in data
     }
 
@@ -183,13 +165,13 @@ def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
 def load_associated_company_schema():
-    associated_company_schema = load_schema("companies")
+    associated_company_schema = load_schema("companies", move_props_to_toplevel=False)
     #pylint: disable=line-too-long
     associated_company_schema['properties']['company-id'] = associated_company_schema['properties'].pop('companyId')
     associated_company_schema['properties']['portal-id'] = associated_company_schema['properties'].pop('portalId')
     return associated_company_schema
 
-def load_schema(entity_name):
+def load_schema(entity_name, move_props_to_toplevel=True):
     schema = utils.load_json(get_abs_path('schemas/{}.json'.format(entity_name)))
     if entity_name in ["contacts", "companies", "deals"]:
         custom_schema = get_custom_schema(entity_name)
@@ -206,8 +188,9 @@ def load_schema(entity_name):
                     custom_schema[key] = value
 
         # Move properties to top level
-        custom_schema_top_level = {'property_{}'.format(k): v for k, v in custom_schema.items()}
-        schema['properties'].update(custom_schema_top_level)
+        if move_props_to_toplevel:
+            custom_schema_top_level = {'property_{}'.format(k): v for k, v in custom_schema.items()}
+            schema['properties'].update(custom_schema_top_level)
 
         # Make properties_versions selectable and share the same schema.
         versions_schema = utils.load_json(get_abs_path('schemas/versions.json'))
@@ -325,15 +308,35 @@ def request(url, params=None):
 # }
 
 def lift_properties_and_versions(record):
+    new_properties = {}
     for key, value in record.get('properties', {}).items():
         computed_key = "property_{}".format(key)
         versions = value.get('versions')
-        record[computed_key] = value
+        record[computed_key] = value.get('value')
+        # Also transform the inner property
+        new_properties[key] = value.get('value')
 
         if versions:
             if not record.get('properties_versions'):
                 record['properties_versions'] = []
             record['properties_versions'] += versions
+    # Set new properties
+    if 'properties' in record:
+        record['properties'] = new_properties
+
+    associated_company = record.get('associated-company', {})
+    associated_new_props = {}
+    for key, value in associated_company.get('properties', {}).items():
+        # Flatten these properties as well but dont lift them out
+        associated_new_props[key] = value.get('value')
+
+    if associated_new_props:
+        associated_company['properties'] = associated_new_props
+
+    # This is probably not necessary
+    if associated_company:
+        record['associated-company'] = associated_company
+
     return record
 
 @backoff.on_exception(backoff.constant,
