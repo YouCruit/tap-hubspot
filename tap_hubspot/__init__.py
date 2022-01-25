@@ -96,6 +96,10 @@ ENDPOINTS = {
     "forms":                "/forms/v2/forms",
     "workflows":            "/automation/v3/workflows",
     "owners":               "/owners/v2/owners",
+
+    "tickets_properties":  "/properties/v2/tickets/properties",
+    "tickets_all":          "/crm-objects/v1/objects/tickets/paged",
+    "tickets_detail":       "/crm-objects/v1/objects/tickets/{ticket_id}",
 }
 
 def get_start(state, tap_stream_id, bookmark_key):
@@ -173,7 +177,7 @@ def load_associated_company_schema():
 
 def load_schema(entity_name, move_props_to_toplevel=True):
     schema = utils.load_json(get_abs_path('schemas/{}.json'.format(entity_name)))
-    if entity_name in ["contacts", "companies", "deals"]:
+    if entity_name in ["contacts", "companies", "deals", "tickets"]:
         custom_schema = get_custom_schema(entity_name)
 
         schema['properties']['properties'] = {
@@ -662,6 +666,27 @@ def sync_deals(STATE, ctx):
     singer.write_state(STATE)
     return STATE
 
+def sync_tickets(STATE, ctx):
+    catalog = ctx.get_catalog_from_id(singer.get_currently_syncing(STATE))
+    mdata = metadata.to_map(catalog.get('metadata'))
+    schema = load_schema("tickets")
+    singer.write_schema("tickets", schema, ["objectId"], catalog.get('stream_alias'))
+    LOGGER.info("sync_tickets(NO bookmarks)")
+    url = get_url("tickets_all")
+    # Include all custom properties present in the schema
+    params = {
+        'properties': list(schema['properties']['properties']['properties'].keys())
+    }
+
+    with Transformer(UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING) as bumble_bee:
+        for row in gen_request(STATE, 'tickets', url, params, "objects", "hasMore", ["offset"], ["offset"]):
+            #record = request(get_url("campaigns_detail", campaign_id=row['id'])).json()
+            record = bumble_bee.transform(lift_properties_and_versions(row), schema, mdata)
+            singer.write_record("tickets", record, catalog.get('stream_alias'), time_extracted=utils.now())
+
+    return STATE
+
+
 #NB> no suitable bookmark is available: https://developers.hubspot.com/docs/methods/email/get_campaigns_by_id
 def sync_campaigns(STATE, ctx):
     catalog = ctx.get_catalog_from_id(singer.get_currently_syncing(STATE))
@@ -951,6 +976,7 @@ STREAMS = [
     Stream('email_events', sync_email_events, ['id'], 'startTimestamp', 'INCREMENTAL'),
 
     # Do these last as they are full table
+    Stream('tickets', sync_tickets, ["objectId"], None, 'FULL_TABLE'),
     Stream('forms', sync_forms, ['guid'], 'updatedAt', 'FULL_TABLE'),
     Stream('workflows', sync_workflows, ['id'], 'updatedAt', 'FULL_TABLE'),
     Stream('owners', sync_owners, ["ownerId"], 'updatedAt', 'FULL_TABLE'),
