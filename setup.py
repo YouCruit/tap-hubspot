@@ -2,11 +2,11 @@
 
 from setuptools import setup
 
-setup(name='tap-hubspot',
-      version='2.9.5',
+setup(name='tap-hubspot-spacecowboy',
+      version='1.0.0',
       description='Singer.io tap for extracting data from the HubSpot API',
-      author='Stitch',
-      url='http://singer.io',
+      author='SpaceCowboy',
+      url='https://github.com/spacecowboy/tap-hubspot',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_hubspot'],
       install_requires=[
@@ -39,6 +39,7 @@ setup(name='tap-hubspot',
               "keywords.json",
               "owners.json",
               "subscription_changes.json",
+              "tickets.json",
               "workflows.json",
           ],
       },
