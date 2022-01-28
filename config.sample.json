@@ -1,6 +1,4 @@
 {
-  "client_id": 123456789000,
-  "client_secret": "my_secret",
-  "code": "authorization_code",
+  "hapikey": "your-hubspot-api-key-here",
   "start_date": "2017-01-01T00:00:00Z"
 }
