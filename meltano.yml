@@ -11,7 +11,7 @@ plugins:
     - catalog
     - discover
     config:
-      api_key: None
+      api_key: null
     settings:
     - name: api_key
       kind: password
