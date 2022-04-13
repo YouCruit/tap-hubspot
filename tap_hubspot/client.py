@@ -25,6 +25,8 @@ class HubSpotStream(RESTStream):
 
     # Override in subclass to fetch additional properties
     properties_object_type = None
+    # Used to cache extra properties fetched
+    extra_properties = None
 
     @property
     def authenticator(self) -> APIKeyAuthenticator:
@@ -50,9 +52,9 @@ class HubSpotStream(RESTStream):
         self, response: requests.Response, previous_token: Optional[Any]
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
-        # TODO: If pagination is required, return a token which can be used to get the
-        #       next page. If this is the final page, return "None" to end the
-        #       pagination loop.
+        if self.config.get("test", False):
+            # Return a single page in unit tests
+            return None
         if self.next_page_token_jsonpath:
             all_matches = extract_jsonpath(
                 self.next_page_token_jsonpath, response.json()
@@ -70,7 +72,7 @@ class HubSpotStream(RESTStream):
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {
             # Hubspot sets a limit of most 100 per request. Default is 10
-            "limit": 100
+            "limit": self.config.get("limit", 100)
         }
         props_to_get = self.get_properties()
         if props_to_get:
@@ -82,20 +84,14 @@ class HubSpotStream(RESTStream):
             params["order_by"] = self.replication_key
         return params
 
-    # def prepare_request_payload(
-    #     self, context: Optional[dict], next_page_token: Optional[Any]
-    # ) -> Optional[dict]:
-    #     """Prepare the data payload for the REST API request.
-
-    #     By default, no payload will be sent (return None).
-    #     """
-    #     # TODO: Delete this method if no payload is required. (Most REST APIs.)
-    #     return None
-
     def get_properties(self) -> Iterable[str]:
         """Override to return a list of properties to fetch for objects"""
+        if self.extra_properties is not None:
+           return self.extra_properties
+
         if not self.properties_object_type:
-            return []
+           self.extra_properties = []
+           return self.extra_properties
 
         r = requests.get(
             "".join([self.url_base, f"/crm/v3/properties/{self.properties_object_type}"]),
@@ -106,14 +102,15 @@ class HubSpotStream(RESTStream):
         if r.status_code != 200:
             raise RuntimeError(f"Could not fetch properties: {r.status_code}, {r.text}")
 
-        props = []
-        for p in  extract_jsonpath("$.records[*]", input=r.json()):
-            props.append(p["name"])
-        return props
+        self.extra_properties = []
+        j = r.json()
+        for p in extract_jsonpath("$.results[*]", input=r.json()):
+            print(p)
+            self.extra_properties.append(p["name"])
+        return self.extra_properties
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         """Parse the response and return an iterator of result rows."""
-        # TODO: Parse response body and return a set of records.
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:

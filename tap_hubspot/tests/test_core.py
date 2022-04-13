@@ -2,12 +2,14 @@
 
 import datetime
 
-from singer_sdk.testing import get_standard_tap_tests
+from singer_sdk.testing import get_standard_tap_tests, tap_sync_test
 
 from tap_hubspot.tap import TapHubSpot
 
 SAMPLE_CONFIG = {
     "api_key": "todo"
+    "test": "yes",
+    "limit": 1,
 }
 
 
@@ -22,4 +24,11 @@ def test_standard_tap_tests():
         test()
 
 
-# TODO: Create additional tests as appropriate for your tap.
+def test_sync():
+    """Tests companies stream"""
+    (o, e) = tap_sync_test(TapHubSpot(config=SAMPLE_CONFIG))
+    output = o.getvalue()
+    print(output)
+
+    # Change this to a custom property you know exists
+    #assert "custom" in output
