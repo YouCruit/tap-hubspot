@@ -1,7 +1,5 @@
 """Tests standard tap features using the built-in SDK tests library."""
 
-import datetime
-
 from singer_sdk.testing import get_standard_tap_tests, tap_sync_test
 
 from tap_hubspot.tap import TapHubSpot
@@ -31,4 +29,4 @@ def test_sync():
     print(output)
 
     # Change this to a custom property you know exists
-    #assert "custom" in output
+    # assert "custom" in output

@@ -2,10 +2,8 @@
 
 import requests
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Iterable
+from typing import Any, Dict, Optional, Iterable
 import json
-
-from memoization import cached
 
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
@@ -20,8 +18,10 @@ class HubSpotStream(RESTStream):
 
     url_base = "https://api.hubapi.com"
 
-    records_jsonpath = "$.results[*]"  # Or override `parse_response`.
-    next_page_token_jsonpath = "$.paging.next.after"  # Or override `get_next_page_token`.
+    # Or override `parse_response`.
+    records_jsonpath = "$.results[*]"
+    # Or override `get_next_page_token`.
+    next_page_token_jsonpath = "$.paging.next.after"
 
     # Override in subclass to fetch additional properties
     properties_object_type = None
@@ -87,14 +87,15 @@ class HubSpotStream(RESTStream):
     def get_properties(self) -> Iterable[str]:
         """Override to return a list of properties to fetch for objects"""
         if self.extra_properties is not None:
-           return self.extra_properties
+            return self.extra_properties
 
         if not self.properties_object_type:
-           self.extra_properties = []
-           return self.extra_properties
+            self.extra_properties = []
+            return self.extra_properties
 
         r = requests.get(
-            "".join([self.url_base, f"/crm/v3/properties/{self.properties_object_type}"]),
+            "".join([self.url_base,
+                     f"/crm/v3/properties/{self.properties_object_type}"]),
             headers=self.http_headers,
             params={"hapikey": self.config.get("api_key")},
         )
@@ -103,9 +104,7 @@ class HubSpotStream(RESTStream):
             raise RuntimeError(f"Could not fetch properties: {r.status_code}, {r.text}")
 
         self.extra_properties = []
-        j = r.json()
         for p in extract_jsonpath("$.results[*]", input=r.json()):
-            print(p)
             self.extra_properties.append(p["name"])
         return self.extra_properties
 

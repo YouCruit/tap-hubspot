@@ -1,9 +1,5 @@
 """Stream type classes for tap-hubspot."""
 
-from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Iterable
-import requests
-
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_hubspot.client import HubSpotStream
@@ -85,6 +81,7 @@ class ContactsStream(HubSpotStream):
             th.StringType,
         ),
     ).to_dict()
+
 
 class DealsStream(HubSpotStream):
     """Deals."""
