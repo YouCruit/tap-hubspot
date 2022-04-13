@@ -34,7 +34,6 @@ class TapHubSpot(Tap):
     """HubSpot tap class."""
     name = "tap-hubspot"
 
-    # TODO: Update this section with the actual config values you expect:
     config_jsonschema = th.PropertiesList(
         th.Property(
             "api_key",

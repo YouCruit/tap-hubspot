@@ -5,7 +5,7 @@ from singer_sdk.testing import get_standard_tap_tests, tap_sync_test
 from tap_hubspot.tap import TapHubSpot
 
 SAMPLE_CONFIG = {
-    "api_key": "todo"
+    "api_key": "test",
     "test": "yes",
     "limit": 1,
 }
