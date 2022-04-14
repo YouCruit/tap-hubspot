@@ -2,6 +2,7 @@
 
 import requests
 import sys
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Iterable
 import json
@@ -192,6 +193,8 @@ class HubSpotStream(RESTStream):
                     ]
                 }
             ]
+
+        logging.debug(f"Request body: {body}")
 
         return body
 
