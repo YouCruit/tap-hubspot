@@ -149,7 +149,9 @@ class HubSpotStream(RESTStream):
         starting_replication_value: datetime = self.get_starting_timestamp(context)
         # If no state exists, then fallback to config
         if not starting_replication_value and 'start_from' in self.config:
-            starting_replication_value = parse_datetime(self.config['start_from'])
+            start_from = self.config.get('start_from', None)
+            if start_from:
+                starting_replication_value = parse_datetime(start_from)
 
         body: dict = {
             "sorts": [
