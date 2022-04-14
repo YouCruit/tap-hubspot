@@ -156,7 +156,7 @@ class HubSpotStream(RESTStream):
                 try:
                     starting_replication_value = parse_datetime(start_from)
                 except:
-                    print(f"Could not parse starting date: '{start_from}'", file=sys.stderr)
+                    logging.error(f"Could not parse starting date: '{start_from}'", file=sys.stderr)
                     pass
 
         body: dict = {
@@ -194,7 +194,7 @@ class HubSpotStream(RESTStream):
                 }
             ]
 
-        logging.debug(f"Request body: {body}")
+        logging.error(f"Request body: {body}")
 
         return body
 
