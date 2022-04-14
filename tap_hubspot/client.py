@@ -54,7 +54,9 @@ class HubSpotStream(RESTStream):
         Returns:
             `True` if stream is sorted. Defaults to `False`.
         """
-        return self.replication_method == REPLICATION_INCREMENTAL
+        return False
+        # Hubspot is shit. It returns data which is not sorted...
+        #return self.replication_method == REPLICATION_INCREMENTAL
 
     @property
     def authenticator(self) -> APIKeyAuthenticator:
@@ -193,8 +195,6 @@ class HubSpotStream(RESTStream):
                     ]
                 }
             ]
-
-        logging.error(f"Request body: {body}")
 
         return body
 
