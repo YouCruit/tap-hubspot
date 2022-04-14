@@ -6,8 +6,10 @@ from tap_hubspot.tap import TapHubSpot
 
 SAMPLE_CONFIG = {
     "api_key": "test",
-    "test": "yes",
-    "limit": 1,
+    "start_from": "2022-04-13T07:41:30.007Z",
+    "metrics_log_level": "debug",
+    #  "test": "yes",
+    #  "limit": 1,
 }
 
 
@@ -24,6 +26,9 @@ def test_standard_tap_tests():
 
 def test_sync():
     """Tests companies stream"""
+    #tap = TapHubSpot(config=SAMPLE_CONFIG)
+    #tap.sync_all()
+    #assert False
     (o, e) = tap_sync_test(TapHubSpot(config=SAMPLE_CONFIG))
     output = o.getvalue()
     print(output)

@@ -15,6 +15,7 @@ pipx install https://github.com/spacecowboy/tap-hubspot.git
 ### Accepted Config Options
 
 - `api_key`: API Key for HubSpot
+- `start_from`: Timestamp to start incremental sync from. Example: `2022-04-13T07:41:30.007Z`
 
 A full list of supported settings and capabilities for this
 tap is available by running:

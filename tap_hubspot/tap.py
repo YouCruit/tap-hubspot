@@ -41,6 +41,12 @@ class TapHubSpot(Tap):
             required=True,
             description="HubSpot API key"
         ),
+        th.Property(
+            "start_from",
+            th.DateTimeType,
+            required=False,
+            description="Starts incremental stream from this updated timestamp"
+        ),
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
