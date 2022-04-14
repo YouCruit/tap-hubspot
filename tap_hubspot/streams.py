@@ -162,7 +162,7 @@ class DealsStream(HubSpotStream):
 
 class TicketsStream(HubSpotStream):
     """Tickets."""
-    name = "deals"
+    name = "tickets"
     path = "/crm/v3/objects/tickets/search"
     properties_object_type = "tickets"
     primary_keys = ["id"]
