@@ -33,10 +33,14 @@ class HubSpotStream(RESTStream):
     # Used to cache extra properties fetched
     extra_properties = None
 
+    # Set if forcing non-search endpoint
+    forced_get = False
+
     @property
     def rest_method(self) -> str:
         """Returns REST method depending on sync method"""
-        if self.replication_method == REPLICATION_INCREMENTAL:
+        # Called by prepare request
+        if not self.forced_get and self.replication_method == REPLICATION_INCREMENTAL:
             return "POST"
         else:
             return "GET"
@@ -54,9 +58,8 @@ class HubSpotStream(RESTStream):
         Returns:
             `True` if stream is sorted. Defaults to `False`.
         """
-        return False
-        # Hubspot is shit. It returns data which is not sorted...
-        #return self.replication_method == REPLICATION_INCREMENTAL
+        # Hubspot has a bug in contacts
+        return self.replication_method == REPLICATION_INCREMENTAL and self.name != "contacts"
 
     @property
     def authenticator(self) -> APIKeyAuthenticator:
@@ -98,7 +101,8 @@ class HubSpotStream(RESTStream):
             # Here a quirk: If more than 10 000 results are in the query, then HubSpot will
             # return error 400 when you exceed 10 000. So stop early.
             # Run another sync to pickup from where you left off
-            if (self.replication_method == REPLICATION_INCREMENTAL
+            if (not self.forced_get
+                and self.replication_method == REPLICATION_INCREMENTAL
                 and int(next_page_token) + 100 >= 10000):
                 next_page_token = None
         except:
@@ -112,7 +116,7 @@ class HubSpotStream(RESTStream):
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
-        if self.replication_method == REPLICATION_INCREMENTAL:
+        if not self.forced_get and self.replication_method == REPLICATION_INCREMENTAL:
            # Handled in prepare_request_payload instead
            return {}
 
@@ -146,7 +150,7 @@ class HubSpotStream(RESTStream):
         Returns:
             Dictionary with the body to use for the request.
         """
-        if self.replication_method != REPLICATION_INCREMENTAL:
+        if self.forced_get or self.replication_method != REPLICATION_INCREMENTAL:
             return None
 
         # Datetime object

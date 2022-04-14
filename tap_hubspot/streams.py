@@ -1,5 +1,7 @@
 """Stream type classes for tap-hubspot."""
 
+import requests
+from typing import Any, Optional
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_hubspot.client import HubSpotStream
@@ -89,6 +91,30 @@ class ContactsStream(HubSpotStream):
             th.DateTimeType,
         ),
     ).to_dict()
+
+    def get_url(self, context: Optional[dict]) -> str:
+        """Get stream entity URL.
+
+        Because contacts is buggy by returning unsorted data,
+        can't use the search api when fetching the initial data because
+        its limit of 10k items.
+        """
+        if self.forced_get:
+            # Contacts is not sorted. So use other endpoint
+            path = "/".join(self.path.split("/")[:-1])
+        else:
+            path = self.path
+
+        return "".join([self.url_base, path])
+
+    def prepare_request(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> requests.PreparedRequest:
+        # This method is called for of all
+        if not self.get_starting_replication_key_value(context):
+            # Contacts is not sorted. So use other endpoint
+            self.forced_get = True
+        return super().prepare_request(context, next_page_token)
 
 
 class DealsStream(HubSpotStream):
