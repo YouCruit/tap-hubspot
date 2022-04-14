@@ -1,6 +1,7 @@
 """REST client handling, including HubSpotStream base class."""
 
 import requests
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Iterable
 import json
@@ -148,10 +149,14 @@ class HubSpotStream(RESTStream):
         # Datetime object
         starting_replication_value: datetime = self.get_starting_timestamp(context)
         # If no state exists, then fallback to config
-        if not starting_replication_value and 'start_from' in self.config:
+        if not starting_replication_value:
             start_from = self.config.get('start_from', None)
             if start_from:
-                starting_replication_value = parse_datetime(start_from)
+                try:
+                    starting_replication_value = parse_datetime(start_from)
+                except:
+                    print(f"Could not parse starting date: '{start_from}'", file=sys.stderr)
+                    pass
 
         body: dict = {
             "sorts": [
