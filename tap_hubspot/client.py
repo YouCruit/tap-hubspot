@@ -70,7 +70,7 @@ class HubSpotStream(RESTStream):
             headers["User-Agent"] = self.config.get("user_agent")
         # If not using an authenticator, you may also provide inline auth headers:
         # headers["Private-Token"] = self.config.get("auth_token")
-        headers['Authorization'] = "Bearer" + self.config.get("api_key");
+        headers['Authorization'] = "Bearer " + self.config.get("api_key");
         return headers
 
     def get_next_page_token(
