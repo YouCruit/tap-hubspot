@@ -61,15 +61,6 @@ class HubSpotStream(RESTStream):
         # Hubspot has a bug in contacts
         return self.replication_method == REPLICATION_INCREMENTAL and self.name != "contacts"
 
-    @property
-    def authenticator(self) -> APIKeyAuthenticator:
-        """Return a new authenticator object."""
-        return APIKeyAuthenticator.create_for_stream(
-            self,
-            key="hapikey",
-            value=self.config.get("api_key"),
-            location="params"
-        )
 
     @property
     def http_headers(self) -> dict:
@@ -79,6 +70,7 @@ class HubSpotStream(RESTStream):
             headers["User-Agent"] = self.config.get("user_agent")
         # If not using an authenticator, you may also provide inline auth headers:
         # headers["Private-Token"] = self.config.get("auth_token")
+        headers['Authorization'] = "Bearer" + self.config.get("api_key");
         return headers
 
     def get_next_page_token(
@@ -215,7 +207,6 @@ class HubSpotStream(RESTStream):
             "".join([self.url_base,
                      f"/crm/v3/properties/{self.properties_object_type}"]),
             headers=self.http_headers,
-            params={"hapikey": self.config.get("api_key")},
         )
 
         if r.status_code != 200:
