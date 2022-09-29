@@ -11,9 +11,9 @@ plugins:
     - catalog
     - discover
     config:
-      api_key: null
+      hapikey: null
     settings:
-    - name: api_key
+    - name: hapikey
       kind: password
   loaders:
   - name: target-jsonl

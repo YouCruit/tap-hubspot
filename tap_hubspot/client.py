@@ -67,7 +67,7 @@ class HubSpotStream(RESTStream):
         return APIKeyAuthenticator.create_for_stream(
             self,
             key="hapikey",
-            value=self.config.get("api_key"),
+            value=self.config.get("hapikey"),
             location="params"
         )
 
@@ -215,7 +215,7 @@ class HubSpotStream(RESTStream):
             "".join([self.url_base,
                      f"/crm/v3/properties/{self.properties_object_type}"]),
             headers=self.http_headers,
-            params={"hapikey": self.config.get("api_key")},
+            params={"hapikey": self.config.get("hapikey")},
         )
 
         if r.status_code != 200:
