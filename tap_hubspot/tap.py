@@ -38,7 +38,7 @@ class TapHubSpot(Tap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "api_key",
+            "hapikey",
             th.StringType,
             required=True,
             description="HubSpot API key"

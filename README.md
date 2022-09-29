@@ -14,7 +14,7 @@ pipx install https://github.com/spacecowboy/tap-hubspot.git
 
 ### Accepted Config Options
 
-- `api_key`: API Key for HubSpot
+- `hapikey`: API Key for HubSpot
 - `start_from`: Timestamp to start incremental sync from. Example: `2022-04-13T07:41:30.007Z`
 
 A full list of supported settings and capabilities for this
@@ -86,5 +86,5 @@ meltano elt tap-hubspot target-jsonl
 
 ### SDK Dev Guide
 
-See the [dev guide](https://sdk.meltano.com/en/latest/dev_guide.html) for more instructions on how to use the SDK to 
+See the [dev guide](https://sdk.meltano.com/en/latest/dev_guide.html) for more instructions on how to use the SDK to
 develop your own taps and targets.
