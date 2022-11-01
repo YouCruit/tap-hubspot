@@ -9,6 +9,7 @@ from tap_hubspot.streams import (
     ContactsStream,
     CallsStream,
     DealsStream,
+    DealsPipelinesStream,
     EmailsStream,
     MeetingsStream,
     NotesStream,
@@ -20,6 +21,7 @@ STREAM_TYPES = [
     CompaniesStream,
     ContactsStream,
     DealsStream,
+    DealsPipelinesStream,
     OwnersStream,
     TicketsStream,
     # Doing engagements last since
