@@ -293,9 +293,7 @@ class HubSpotStream(RESTStream):
 
         with batch_config.storage.fs() as fs:
             for record in self._sync_records(context, write_messages=False):
-                # Why do this first? Because get_records can change the batch size
-                # but that won't be visible until the NEXT record
-                if self._force_batch_message or chunk_size >= self.batch_size:
+                if chunk_size >= self.batch_size:
                     gz.close()
                     gz = None
                     f.close()
@@ -307,9 +305,6 @@ class HubSpotStream(RESTStream):
 
                     i += 1
                     chunk_size = 0
-
-                    # Reset force flag
-                    self._force_batch_message = False
 
                 if filename is None:
                     filename = f"{prefix}{sync_id}-{i}.json.gz"
