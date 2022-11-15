@@ -4,24 +4,36 @@
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
+## Capabilities
+
+* `catalog`
+* `state`
+* `discover`
+* `about`
+* `stream-maps`
+* `schema-flattening`
+* `batch`
+
+## Settings
+
+| Setting             | Required | Default | Description |
+|:--------------------|:--------:|:-------:|:------------|
+| hapikey             | True     | None    | HubSpot API key |
+| start_from          | False    | None    | Starts incremental stream from this updated timestamp |
+| batch_size          | False    | 1000000 | Size of batch files |
+| batch_config        | False    | None    |             |
+| stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
+| stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
+| flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
+| flattening_max_depth| False    | None    | The max depth to flatten schemas. |
+
+A full list of supported settings and capabilities is available by running: `tap-hubspot --about`
+
+
 ## Installation
 
 ```bash
 pipx install https://github.com/spacecowboy/tap-hubspot.git
-```
-
-## Configuration
-
-### Accepted Config Options
-
-- `hapikey`: API Key for HubSpot
-- `start_from`: Timestamp to start incremental sync from. Example: `2022-04-13T07:41:30.007Z`
-
-A full list of supported settings and capabilities for this
-tap is available by running:
-
-```bash
-tap-hubspot --about
 ```
 
 ## Usage
@@ -58,6 +70,18 @@ You can also test the `tap-hubspot` CLI interface directly using `poetry run`:
 
 ```bash
 poetry run tap-hubspot --help
+```
+
+### Running lint
+
+```bash
+poetry run tox -e lint
+```
+
+### Format your code
+
+```bash
+poetry run tox -e format
 ```
 
 ### Testing with [Meltano](https://www.meltano.com)

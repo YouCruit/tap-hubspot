@@ -1,19 +1,21 @@
 """REST client handling, including HubSpotStream base class."""
 
-import requests
-import sys
-import logging
-from pathlib import Path
-from typing import Any, Dict, Optional, Iterable
+import gzip
 import json
+import logging
+import sys
 from datetime import datetime
-from dateutil.parser import parse as parse_datetime
+from pathlib import Path
+from typing import IO, Any, Dict, Iterable, Optional
+from uuid import uuid4
 
+import requests
+from dateutil.parser import parse as parse_datetime
+from singer_sdk.authenticators import APIKeyAuthenticator
+from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
-from singer_sdk.authenticators import APIKeyAuthenticator
 from singer_sdk.streams.core import REPLICATION_INCREMENTAL
-
 
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
@@ -35,6 +37,10 @@ class HubSpotStream(RESTStream):
 
     # Set if forcing non-search endpoint
     forced_get = False
+
+    @property
+    def batch_size(self) -> int:
+        return self.config.get("batch_size", 1_000_000)
 
     @property
     def rest_method(self) -> str:
@@ -59,16 +65,16 @@ class HubSpotStream(RESTStream):
             `True` if stream is sorted. Defaults to `False`.
         """
         # Hubspot has a bug in contacts
-        return self.replication_method == REPLICATION_INCREMENTAL and self.name != "contacts"
+        return (
+            self.replication_method == REPLICATION_INCREMENTAL
+            and self.name != "contacts"
+        )
 
     @property
     def authenticator(self) -> APIKeyAuthenticator:
         """Return a new authenticator object."""
         return APIKeyAuthenticator.create_for_stream(
-            self,
-            key="hapikey",
-            value=self.config.get("hapikey"),
-            location="params"
+            self, key="hapikey", value=self.config.get("hapikey"), location="params"
         )
 
     @property
@@ -98,17 +104,19 @@ class HubSpotStream(RESTStream):
             next_page_token = first_match
 
         try:
-            # Here a quirk: If more than 10 000 results are in the query, then HubSpot will
-            # return error 400 when you exceed 10 000. So stop early.
-            # Run another sync to pickup from where you left off
-            if (not self.forced_get
+            # Here a quirk: If more than 10 000 results are in the query,
+            # then HubSpot will return error 400 when you exceed 10 000.
+            # So stop early. Run another sync to pickup from where
+            # you left off.
+            if (
+                not self.forced_get
                 and self.replication_method == REPLICATION_INCREMENTAL
-                and int(next_page_token) + 100 >= 10000):
+                and int(next_page_token) + 100 >= 10000
+            ):
                 next_page_token = None
-        except:
+        except Exception:
             # Not an int, so can't do anything
             pass
-
 
         return next_page_token
 
@@ -117,8 +125,8 @@ class HubSpotStream(RESTStream):
     ) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         if not self.forced_get and self.replication_method == REPLICATION_INCREMENTAL:
-           # Handled in prepare_request_payload instead
-           return {}
+            # Handled in prepare_request_payload instead
+            return {}
 
         params: dict = {
             # Hubspot sets a limit of most 100 per request. Default is 10
@@ -157,12 +165,15 @@ class HubSpotStream(RESTStream):
         starting_replication_value: datetime = self.get_starting_timestamp(context)
         # If no state exists, then fallback to config
         if not starting_replication_value:
-            start_from = self.config.get('start_from', None)
+            start_from = self.config.get("start_from", None)
             if start_from:
                 try:
                     starting_replication_value = parse_datetime(start_from)
-                except:
-                    logging.error(f"Could not parse starting date: '{start_from}'", file=sys.stderr)
+                except Exception:
+                    logging.error(
+                        f"Could not parse starting date: '{start_from}'",
+                        file=sys.stderr,
+                    )
                     pass
 
         body: dict = {
@@ -170,11 +181,11 @@ class HubSpotStream(RESTStream):
                 {
                     # This is inside the properties object
                     "propertyName": self.replication_key,
-                    "direction": "ASCENDING"
+                    "direction": "ASCENDING",
                 }
             ],
             # Hubspot sets a limit of most 100 per request. Default is 10
-            "limit": 100
+            "limit": 100,
         }
 
         props_to_get = self.get_properties()
@@ -194,7 +205,7 @@ class HubSpotStream(RESTStream):
                             "operator": "GTE",
                             # It's never specified anywhere, but Hubspot API accepts
                             # timestamps in milliseconds
-                            "value": int(starting_replication_value.timestamp() * 1000)
+                            "value": int(starting_replication_value.timestamp() * 1000),
                         }
                     ]
                 }
@@ -212,8 +223,9 @@ class HubSpotStream(RESTStream):
             return self.extra_properties
 
         r = requests.get(
-            "".join([self.url_base,
-                     f"/crm/v3/properties/{self.properties_object_type}"]),
+            "".join(
+                [self.url_base, f"/crm/v3/properties/{self.properties_object_type}"]
+            ),
             headers=self.http_headers,
             params={"hapikey": self.config.get("hapikey")},
         )
@@ -236,19 +248,79 @@ class HubSpotStream(RESTStream):
         if self.replication_key:
             row[self.replication_key] = self.get_replication_key_value(row)
         # Convert properties and associations back into JSON
-        if 'properties' in row:
-            jsonprops = json.dumps(row.get('properties'))
-            row['properties'] = jsonprops
-        if 'associations' in row:
-            jsonassoc = json.dumps(row.get('associations'))
-            row['associations'] = jsonassoc
+        if "properties" in row:
+            jsonprops = json.dumps(row.get("properties"))
+            row["properties"] = jsonprops
+        if "associations" in row:
+            jsonassoc = json.dumps(row.get("associations"))
+            row["associations"] = jsonassoc
         return row
 
     def get_replication_key_value(self, row: dict) -> Optional[datetime]:
         """Reads the replication value from a record. Default implementation assumes
         it lives inside of properties object"""
-        if not self.replication_key or 'properties' not in row:
+        if not self.replication_key or "properties" not in row:
             return None
 
         # String like 2022-04-13T07:41:30.007Z
-        return parse_datetime(row['properties'][self.replication_key])
+        return parse_datetime(row["properties"][self.replication_key])
+
+    def get_batches(
+        self,
+        batch_config: BatchConfig,
+        context: Optional[dict] = None,
+    ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
+        """Batch generator function.
+
+        Developers are encouraged to override this method to customize batching
+        behavior for databases, bulk APIs, etc.
+
+        Args:
+            batch_config: Batch config for this stream.
+            context: Stream partition or context dictionary.
+
+        Yields:
+            A tuple of (encoding, manifest) for each batch.
+        """
+        sync_id = f"{self.tap_name}--{self.name}-{uuid4()}"
+        prefix = batch_config.storage.prefix or ""
+
+        i = 1
+        chunk_size = 0
+        filename: Optional[str] = None
+        f: Optional[IO] = None
+        gz: Optional[gzip.GzipFile] = None
+
+        with batch_config.storage.fs() as fs:
+            for record in self._sync_records(context, write_messages=False):
+                # Why do this first? Because get_records can change the batch size
+                # but that won't be visible until the NEXT record
+                if self._force_batch_message or chunk_size >= self.batch_size:
+                    gz.close()
+                    gz = None
+                    f.close()
+                    f = None
+                    file_url = fs.geturl(filename)
+                    yield batch_config.encoding, [file_url]
+
+                    filename = None
+
+                    i += 1
+                    chunk_size = 0
+
+                    # Reset force flag
+                    self._force_batch_message = False
+
+                if filename is None:
+                    filename = f"{prefix}{sync_id}-{i}.json.gz"
+                    f = fs.open(filename, "wb")
+                    gz = gzip.GzipFile(fileobj=f, mode="wb")
+
+                gz.write((json.dumps(record, default=str) + "\n").encode())
+                chunk_size += 1
+
+            if chunk_size > 0:
+                gz.close()
+                f.close()
+                file_url = fs.geturl(filename)
+                yield batch_config.encoding, [file_url]
