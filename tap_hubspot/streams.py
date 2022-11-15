@@ -1,7 +1,8 @@
 """Stream type classes for tap-hubspot."""
 
-import requests
 from typing import Any, Optional
+
+import requests
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_hubspot.client import HubSpotStream
@@ -9,6 +10,7 @@ from tap_hubspot.client import HubSpotStream
 
 class CompaniesStream(HubSpotStream):
     """Companies."""
+
     name = "companies"
     path = "/crm/v3/objects/companies/search"
     properties_object_type = "companies"
@@ -52,6 +54,7 @@ class CompaniesStream(HubSpotStream):
 
 class ContactsStream(HubSpotStream):
     """Contacts."""
+
     name = "contacts"
     path = "/crm/v3/objects/contacts/search"
     properties_object_type = "contacts"
@@ -119,6 +122,7 @@ class ContactsStream(HubSpotStream):
 
 class DealsStream(HubSpotStream):
     """Deals."""
+
     name = "deals"
     path = "/crm/v3/objects/deals/search"
     properties_object_type = "deals"
@@ -159,8 +163,10 @@ class DealsStream(HubSpotStream):
         ),
     ).to_dict()
 
+
 class DealsPipelinesStream(HubSpotStream):
     """Deals Pipelines"""
+
     name = "deals_pipelines"
     path = "/crm/v3/pipelines/deals/"
     primary_keys = ["id"]
@@ -218,6 +224,7 @@ class DealsPipelinesStream(HubSpotStream):
 
 class TicketsStream(HubSpotStream):
     """Tickets."""
+
     name = "tickets"
     path = "/crm/v3/objects/tickets/search"
     properties_object_type = "tickets"
@@ -261,6 +268,7 @@ class TicketsStream(HubSpotStream):
 
 class CallsStream(HubSpotStream):
     """Calls."""
+
     name = "calls"
     path = "/crm/v3/objects/calls/search"
     properties_object_type = "calls"
@@ -304,6 +312,7 @@ class CallsStream(HubSpotStream):
 
 class EmailsStream(HubSpotStream):
     """Emails."""
+
     name = "emails"
     path = "/crm/v3/objects/emails/search"
     properties_object_type = "emails"
@@ -347,6 +356,7 @@ class EmailsStream(HubSpotStream):
 
 class MeetingsStream(HubSpotStream):
     """Meetings."""
+
     name = "meetings"
     path = "/crm/v3/objects/meetings/search"
     properties_object_type = "meetings"
@@ -390,6 +400,7 @@ class MeetingsStream(HubSpotStream):
 
 class NotesStream(HubSpotStream):
     """Notes."""
+
     name = "notes"
     path = "/crm/v3/objects/notes/search"
     properties_object_type = "notes"
@@ -433,6 +444,7 @@ class NotesStream(HubSpotStream):
 
 class TasksStream(HubSpotStream):
     """Tasks."""
+
     name = "tasks"
     path = "/crm/v3/objects/tasks/search"
     properties_object_type = "tasks"
@@ -476,6 +488,7 @@ class TasksStream(HubSpotStream):
 
 class OwnersStream(HubSpotStream):
     """Owners."""
+
     name = "owners"
     path = "/crm/v3/owners/"
     properties_object_type = None
