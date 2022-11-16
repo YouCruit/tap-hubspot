@@ -126,6 +126,8 @@ class HubSpotStream(RESTStream):
             params["properties"] = props_to_get
         if next_page_token:
             params["after"] = next_page_token
+
+        self.logger.debug(f"UrlParams after: {next_page_token}")
         return params
 
     def prepare_request_payload(
@@ -170,6 +172,7 @@ class HubSpotStream(RESTStream):
             body["after"] = next_page_token
 
         replication_key_value = self.get_appropriate_replication_key_value(context)
+        self.logger.debug(f"PrepareRequest rep key val: {replication_key_value}, after: {next_page_token}")
 
         if replication_key_value:
             # Only filter in case we have a value to filter on
@@ -430,6 +433,7 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
                 and self.replication_method == REPLICATION_INCREMENTAL
                 and int(next_page_token) + 100 >= 10000
             ):
+                self.stream.logger.debug(f"Paginator: Hit 10K Limit for {next_page_token}")
                 next_page_token = None
                 self.stream._pager_reset_replication_key_value()
                 self._really_finished = False
@@ -438,4 +442,5 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
             self._really_finished = True
             pass
 
+        self.stream.logger.debug(f"Paginator: {next_page_token}")
         return next_page_token
