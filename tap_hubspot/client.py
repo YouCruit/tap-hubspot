@@ -383,6 +383,25 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
         """
         return self._really_finished
 
+    def advance(self, response: Response) -> None:
+        """Fixing a "bug" where _value is not set for None
+        """
+        self._page_count += 1
+
+        if not self.has_more(response):
+            self._finished = True
+            return
+
+        new_value = self.get_next(response)
+
+        if new_value and new_value == self._value:
+            raise RuntimeError(
+                f"Loop detected in pagination. "
+                f"Pagination token {new_value} is identical to prior token."
+            )
+
+        self._value = new_value
+
     def get_next(self, response: Response) -> Optional[str]:
         """Get the next page token.
 
