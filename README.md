@@ -18,7 +18,7 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 | Setting             | Required | Default | Description |
 |:--------------------|:--------:|:-------:|:------------|
-| hapikey             | True     | None    | HubSpot API key |
+| hapikey             | True     | None    | HubSpot private app token |
 | start_from          | False    | None    | Starts incremental stream from this updated timestamp |
 | batch_size          | False    | 1000000 | Size of batch files |
 | batch_config        | False    | None    |             |
@@ -28,7 +28,6 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 | flattening_max_depth| False    | None    | The max depth to flatten schemas. |
 
 A full list of supported settings and capabilities is available by running: `tap-hubspot --about`
-
 
 ## Installation
 

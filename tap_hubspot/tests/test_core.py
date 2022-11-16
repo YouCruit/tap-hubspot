@@ -8,7 +8,7 @@ SAMPLE_CONFIG = {
     "hapikey": "test",
     "start_from": "2022-04-13T07:41:30.007Z",
     "metrics_log_level": "debug",
-    #  "test": "yes",
+    "test": "yes",
     #  "limit": 1,
 }
 

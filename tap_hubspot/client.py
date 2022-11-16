@@ -11,9 +11,11 @@ from uuid import uuid4
 
 import requests
 from dateutil.parser import parse as parse_datetime
-from singer_sdk.authenticators import APIKeyAuthenticator
+from requests import Response
+from singer_sdk.authenticators import BearerTokenAuthenticator
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.helpers.jsonpath import extract_jsonpath
+from singer_sdk.pagination import BaseAPIPaginator
 from singer_sdk.streams import RESTStream
 from singer_sdk.streams.core import REPLICATION_INCREMENTAL
 
@@ -22,6 +24,8 @@ SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 class HubSpotStream(RESTStream):
     """HubSpot stream class."""
+
+    _LOG_REQUEST_METRICS = False
 
     url_base = "https://api.hubapi.com"
 
@@ -71,10 +75,10 @@ class HubSpotStream(RESTStream):
         )
 
     @property
-    def authenticator(self) -> APIKeyAuthenticator:
+    def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
-        return APIKeyAuthenticator.create_for_stream(
-            self, key="hapikey", value=self.config.get("hapikey"), location="params"
+        return BearerTokenAuthenticator.create_for_stream(
+            self, self.config.get("hapikey")
         )
 
     @property
@@ -87,38 +91,18 @@ class HubSpotStream(RESTStream):
         # headers["Private-Token"] = self.config.get("auth_token")
         return headers
 
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Optional[Any]
-    ) -> Optional[Any]:
-        """Return a token for identifying next page or None if no more pages."""
-        next_page_token = None
+    def get_new_paginator(self) -> BaseAPIPaginator:
+        """Get a fresh paginator for this API endpoint.
 
-        if self.config.get("test", False):
-            # Return a single page in unit tests
-            return None
-        if self.next_page_token_jsonpath:
-            all_matches = extract_jsonpath(
-                self.next_page_token_jsonpath, response.json()
-            )
-            first_match = next(iter(all_matches), None)
-            next_page_token = first_match
-
-        try:
-            # Here a quirk: If more than 10 000 results are in the query,
-            # then HubSpot will return error 400 when you exceed 10 000.
-            # So stop early. Run another sync to pickup from where
-            # you left off.
-            if (
-                not self.forced_get
-                and self.replication_method == REPLICATION_INCREMENTAL
-                and int(next_page_token) + 100 >= 10000
-            ):
-                next_page_token = None
-        except Exception:
-            # Not an int, so can't do anything
-            pass
-
-        return next_page_token
+        Returns:
+            A paginator instance.
+        """
+        return HubspotJSONPathPaginator(
+            self.next_page_token_jsonpath,
+            forced_get=self.forced_get,
+            replication_method=self.replication_method,
+            test=self.config.get("test", False),
+        )
 
     def get_url_params(
         self, context: Optional[dict], next_page_token: Optional[Any]
@@ -222,13 +206,17 @@ class HubSpotStream(RESTStream):
             self.extra_properties = []
             return self.extra_properties
 
-        r = requests.get(
-            "".join(
+        request = self.build_prepared_request(
+            method="GET",
+            url="".join(
                 [self.url_base, f"/crm/v3/properties/{self.properties_object_type}"]
             ),
             headers=self.http_headers,
-            params={"hapikey": self.config.get("hapikey")},
         )
+
+        session = self._requests_session or requests.Session()
+
+        r = session.send(request)
 
         if r.status_code != 200:
             raise RuntimeError(f"Could not fetch properties: {r.status_code}, {r.text}")
@@ -319,3 +307,61 @@ class HubSpotStream(RESTStream):
                 f.close()
                 file_url = fs.geturl(filename)
                 yield batch_config.encoding, [file_url]
+
+
+class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
+    """Paginator class for APIs returning a pagination token in the response body."""
+
+    def __init__(
+        self,
+        jsonpath: str,
+        forced_get: bool,
+        replication_method: str,
+        test: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """Create a new paginator.
+
+        Args:
+            jsonpath: A JSONPath expression.
+            args: Paginator positional arguments for base class.
+            kwargs: Paginator keyword arguments for base class.
+        """
+        super().__init__(None, *args, **kwargs)
+        self._jsonpath = jsonpath
+        self.forced_get = forced_get
+        self.replication_method = replication_method
+        self.test = test
+
+    def get_next(self, response: Response) -> Optional[str]:
+        """Get the next page token.
+
+        Args:
+            response: API response object.
+
+        Returns:
+            The next page token.
+        """
+        if self.test:
+            return None
+
+        all_matches = extract_jsonpath(self._jsonpath, response.json())
+        next_page_token = next(iter(all_matches), None)
+
+        try:
+            # Here a quirk: If more than 10 000 results are in the query,
+            # then HubSpot will return error 400 when you exceed 10 000.
+            # So stop early. Run another sync to pickup from where
+            # you left off.
+            if (
+                not self.forced_get
+                and self.replication_method == REPLICATION_INCREMENTAL
+                and int(next_page_token) + 100 >= 10000
+            ):
+                next_page_token = None
+        except Exception:
+            # Not an int, so can't do anything
+            pass
+
+        return next_page_token
