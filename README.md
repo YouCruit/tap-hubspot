@@ -18,7 +18,7 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 | Setting             | Required | Default | Description |
 |:--------------------|:--------:|:-------:|:------------|
-| hapikey             | True     | None    | HubSpot API key |
+| hapikey             | True     | None    | HubSpot private app token |
 | start_from          | False    | None    | Starts incremental stream from this updated timestamp |
 | batch_size          | False    | 1000000 | Size of batch files |
 | batch_config        | False    | None    |             |
@@ -29,7 +29,6 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 A full list of supported settings and capabilities is available by running: `tap-hubspot --about`
 
-
 ## Installation
 
 ```bash
@@ -39,6 +38,12 @@ pipx install https://github.com/spacecowboy/tap-hubspot.git
 ## Usage
 
 You can easily run `tap-hubspot` by itself or in a pipeline using [Meltano](https://meltano.com/).
+
+### Recommended batch size
+
+In case you are using the batching feature please note that batches will never exceed 10 000 records. This is due to the
+HubSpot API which limits queries to 10 000 results. So to avoid issues downstream, each time that limit is reached a
+batch is forced to end.
 
 ### Executing the Tap Directly
 

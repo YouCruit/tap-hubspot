@@ -11,9 +11,11 @@ from uuid import uuid4
 
 import requests
 from dateutil.parser import parse as parse_datetime
-from singer_sdk.authenticators import APIKeyAuthenticator
+from requests import Response
+from singer_sdk.authenticators import BearerTokenAuthenticator
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.helpers.jsonpath import extract_jsonpath
+from singer_sdk.pagination import BaseAPIPaginator
 from singer_sdk.streams import RESTStream
 from singer_sdk.streams.core import REPLICATION_INCREMENTAL
 
@@ -22,6 +24,8 @@ SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 class HubSpotStream(RESTStream):
     """HubSpot stream class."""
+
+    _LOG_REQUEST_METRICS = False
 
     url_base = "https://api.hubapi.com"
 
@@ -37,6 +41,10 @@ class HubSpotStream(RESTStream):
 
     # Set if forcing non-search endpoint
     forced_get = False
+
+    # Internally used to workaround HubSpot's 10K query limit
+    _appropriate_replication_key_value: Optional[datetime] = None
+    _force_batch = False
 
     @property
     def batch_size(self) -> int:
@@ -71,10 +79,10 @@ class HubSpotStream(RESTStream):
         )
 
     @property
-    def authenticator(self) -> APIKeyAuthenticator:
+    def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
-        return APIKeyAuthenticator.create_for_stream(
-            self, key="hapikey", value=self.config.get("hapikey"), location="params"
+        return BearerTokenAuthenticator.create_for_stream(
+            self, self.config.get("hapikey")
         )
 
     @property
@@ -87,38 +95,19 @@ class HubSpotStream(RESTStream):
         # headers["Private-Token"] = self.config.get("auth_token")
         return headers
 
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Optional[Any]
-    ) -> Optional[Any]:
-        """Return a token for identifying next page or None if no more pages."""
-        next_page_token = None
+    def get_new_paginator(self) -> BaseAPIPaginator:
+        """Get a fresh paginator for this API endpoint.
 
-        if self.config.get("test", False):
-            # Return a single page in unit tests
-            return None
-        if self.next_page_token_jsonpath:
-            all_matches = extract_jsonpath(
-                self.next_page_token_jsonpath, response.json()
-            )
-            first_match = next(iter(all_matches), None)
-            next_page_token = first_match
-
-        try:
-            # Here a quirk: If more than 10 000 results are in the query,
-            # then HubSpot will return error 400 when you exceed 10 000.
-            # So stop early. Run another sync to pickup from where
-            # you left off.
-            if (
-                not self.forced_get
-                and self.replication_method == REPLICATION_INCREMENTAL
-                and int(next_page_token) + 100 >= 10000
-            ):
-                next_page_token = None
-        except Exception:
-            # Not an int, so can't do anything
-            pass
-
-        return next_page_token
+        Returns:
+            A paginator instance.
+        """
+        return HubspotJSONPathPaginator(
+            self,
+            self.next_page_token_jsonpath,
+            forced_get=self.forced_get,
+            replication_method=self.replication_method,
+            test=self.config.get("test", False),
+        )
 
     def get_url_params(
         self, context: Optional[dict], next_page_token: Optional[Any]
@@ -137,6 +126,8 @@ class HubSpotStream(RESTStream):
             params["properties"] = props_to_get
         if next_page_token:
             params["after"] = next_page_token
+
+        self.logger.debug(f"UrlParams after: {next_page_token}")
         return params
 
     def prepare_request_payload(
@@ -161,21 +152,6 @@ class HubSpotStream(RESTStream):
         if self.forced_get or self.replication_method != REPLICATION_INCREMENTAL:
             return None
 
-        # Datetime object
-        starting_replication_value: datetime = self.get_starting_timestamp(context)
-        # If no state exists, then fallback to config
-        if not starting_replication_value:
-            start_from = self.config.get("start_from", None)
-            if start_from:
-                try:
-                    starting_replication_value = parse_datetime(start_from)
-                except Exception:
-                    logging.error(
-                        f"Could not parse starting date: '{start_from}'",
-                        file=sys.stderr,
-                    )
-                    pass
-
         body: dict = {
             "sorts": [
                 {
@@ -195,7 +171,10 @@ class HubSpotStream(RESTStream):
         if next_page_token:
             body["after"] = next_page_token
 
-        if starting_replication_value:
+        replication_key_value = self.get_appropriate_replication_key_value(context)
+        self.logger.debug(f"PrepareRequest rep key val: {replication_key_value}, after: {next_page_token}")
+
+        if replication_key_value:
             # Only filter in case we have a value to filter on
             body["filterGroups"] = [
                 {
@@ -205,13 +184,57 @@ class HubSpotStream(RESTStream):
                             "operator": "GTE",
                             # It's never specified anywhere, but Hubspot API accepts
                             # timestamps in milliseconds
-                            "value": int(starting_replication_value.timestamp() * 1000),
+                            "value": int(replication_key_value.timestamp() * 1000),
                         }
                     ]
                 }
             ]
 
         return body
+
+    def get_appropriate_replication_key_value(
+        self, context: Optional[dict]
+    ) -> Optional[datetime]:
+        """
+        Hupspot api is weird. Only 10K results will be returned in one query and
+        then a 400 error will be returned.
+        The Paginator knows this and will set a flag when the replication_value
+        needs to be updated to work around this.
+        """
+        if self._appropriate_replication_key_value is not None:
+            return self._appropriate_replication_key_value
+
+        replication_key_value: datetime = self.get_starting_timestamp(context)
+
+        if self.is_sorted:
+            # State dict is empty before sync has started which is exactly what we want
+            state_dict = self.get_context_state(context)
+            latest_value = state_dict.get("replication_key_value", None)
+            if latest_value is not None:
+                replication_key_value = parse_datetime(latest_value)
+
+        # If no state exists, then fallback to config
+        if replication_key_value is None:
+            start_from = self.config.get("start_from", None)
+            if start_from:
+                try:
+                    replication_key_value = parse_datetime(start_from)
+                except Exception as e:
+                    logging.error(
+                        f"Could not parse starting date: '{start_from}'",
+                        file=sys.stderr,
+                    )
+                    raise e
+
+        self._appropriate_replication_key_value = replication_key_value
+        return self._appropriate_replication_key_value
+
+    def _pager_reset_replication_key_value(self):
+        """
+        Should only be called by the pager when the 10K query limit is reached
+        """
+        self._appropriate_replication_key_value = None
+        self._force_batch = True
 
     def get_properties(self) -> Iterable[str]:
         """Override to return a list of properties to fetch for objects"""
@@ -222,13 +245,17 @@ class HubSpotStream(RESTStream):
             self.extra_properties = []
             return self.extra_properties
 
-        r = requests.get(
-            "".join(
+        request = self.build_prepared_request(
+            method="GET",
+            url="".join(
                 [self.url_base, f"/crm/v3/properties/{self.properties_object_type}"]
             ),
             headers=self.http_headers,
-            params={"hapikey": self.config.get("hapikey")},
         )
+
+        session = self._requests_session or requests.Session()
+
+        r = session.send(request)
 
         if r.status_code != 200:
             raise RuntimeError(f"Could not fetch properties: {r.status_code}, {r.text}")
@@ -293,7 +320,7 @@ class HubSpotStream(RESTStream):
 
         with batch_config.storage.fs() as fs:
             for record in self._sync_records(context, write_messages=False):
-                if chunk_size >= self.batch_size:
+                if self._force_batch or chunk_size >= self.batch_size:
                     gz.close()
                     gz = None
                     f.close()
@@ -305,6 +332,7 @@ class HubSpotStream(RESTStream):
 
                     i += 1
                     chunk_size = 0
+                    self._force_batch = False
 
                 if filename is None:
                     filename = f"{prefix}{sync_id}-{i}.json.gz"
@@ -319,3 +347,100 @@ class HubSpotStream(RESTStream):
                 f.close()
                 file_url = fs.geturl(filename)
                 yield batch_config.encoding, [file_url]
+
+
+class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
+    """Paginator class for APIs returning a pagination token in the response body."""
+
+    def __init__(
+        self,
+        stream: HubSpotStream,
+        jsonpath: str,
+        forced_get: bool,
+        replication_method: str,
+        test: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """Create a new paginator.
+
+        Args:
+            jsonpath: A JSONPath expression.
+            args: Paginator positional arguments for base class.
+            kwargs: Paginator keyword arguments for base class.
+        """
+        super().__init__(None, *args, **kwargs)
+        self._jsonpath = jsonpath
+        self.forced_get = forced_get
+        self.replication_method = replication_method
+        self.test = test
+        self.stream = stream
+        self._really_finished = False
+
+    @property
+    def finished(self) -> bool:
+        """Get a flag that indicates if the last page of data has been reached.
+
+        Returns:
+            True if there are no more pages.
+        """
+        return self._really_finished
+
+    def advance(self, response: Response) -> None:
+        """Fixing a "bug" where _value is not set for None
+        """
+        self._page_count += 1
+
+        if not self.has_more(response):
+            self._finished = True
+            return
+
+        new_value = self.get_next(response)
+
+        if new_value and new_value == self._value:
+            raise RuntimeError(
+                f"Loop detected in pagination. "
+                f"Pagination token {new_value} is identical to prior token."
+            )
+
+        self._value = new_value
+
+    def get_next(self, response: Response) -> Optional[str]:
+        """Get the next page token.
+
+        Args:
+            response: API response object.
+
+        Returns:
+            The next page token.
+        """
+        if self.test:
+            self._really_finished = True
+            return None
+
+        all_matches = extract_jsonpath(self._jsonpath, response.json())
+        next_page_token = next(iter(all_matches), None)
+
+        if next_page_token is None:
+            self._really_finished = True
+
+        try:
+            # Here's a quirk: If more than 10 000 results are in the query,
+            # then HubSpot will return error 400 when you exceed 10 000.
+            # Tell the stream to change the sorting key
+            if (
+                not self.forced_get
+                and self.replication_method == REPLICATION_INCREMENTAL
+                and int(next_page_token) + 100 >= 10000
+            ):
+                self.stream.logger.debug(f"Paginator: Hit 10K Limit for {next_page_token}")
+                next_page_token = None
+                self.stream._pager_reset_replication_key_value()
+                self._really_finished = False
+        except Exception:
+            # Not an int, so can't do anything
+            self._really_finished = True
+            pass
+
+        self.stream.logger.debug(f"Paginator: {next_page_token}")
+        return next_page_token
