@@ -73,10 +73,7 @@ class HubSpotStream(RESTStream):
             `True` if stream is sorted. Defaults to `False`.
         """
         # Hubspot has a bug in contacts
-        return (
-            self.replication_method == REPLICATION_INCREMENTAL
-            and self.name != "contacts"
-        )
+        return self.replication_method == REPLICATION_INCREMENTAL
 
     @property
     def authenticator(self) -> BearerTokenAuthenticator:
@@ -172,7 +169,9 @@ class HubSpotStream(RESTStream):
             body["after"] = next_page_token
 
         replication_key_value = self.get_appropriate_replication_key_value(context)
-        self.logger.debug(f"PrepareRequest rep key val: {replication_key_value}, after: {next_page_token}")
+        self.logger.debug(
+            f"PrepareRequest rep key val: {replication_key_value}, after: {next_page_token}"
+        )
 
         if replication_key_value:
             # Only filter in case we have a value to filter on
@@ -225,6 +224,10 @@ class HubSpotStream(RESTStream):
                         file=sys.stderr,
                     )
                     raise e
+
+        if replication_key_value is None:
+            # Fallback to EPOCH
+            replication_key_value = parse_datetime("1970-01-1T00:00:00.000000Z")
 
         self._appropriate_replication_key_value = replication_key_value
         return self._appropriate_replication_key_value
@@ -387,8 +390,7 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
         return self._really_finished
 
     def advance(self, response: Response) -> None:
-        """Fixing a "bug" where _value is not set for None
-        """
+        """Fixing a "bug" where _value is not set for None"""
         self._page_count += 1
 
         if not self.has_more(response):
@@ -433,7 +435,9 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
                 and self.replication_method == REPLICATION_INCREMENTAL
                 and int(next_page_token) + 100 >= 10000
             ):
-                self.stream.logger.debug(f"Paginator: Hit 10K Limit for {next_page_token}")
+                self.stream.logger.debug(
+                    f"Paginator: Hit 10K Limit for {next_page_token}"
+                )
                 next_page_token = None
                 self.stream._pager_reset_replication_key_value()
                 self._really_finished = False
