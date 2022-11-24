@@ -2,7 +2,7 @@
 
 import os
 
-from singer_sdk.testing import get_standard_tap_tests, tap_sync_test
+from singer_sdk.testing import get_standard_tap_tests
 
 from tap_hubspot.tap import TapHubSpot
 

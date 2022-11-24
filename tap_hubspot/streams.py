@@ -1,8 +1,5 @@
 """Stream type classes for tap-hubspot."""
 
-from typing import Any, Optional
-
-import requests
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_hubspot.client import HubSpotStream

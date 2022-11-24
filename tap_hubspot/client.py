@@ -3,7 +3,6 @@
 import gzip
 import json
 import logging
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import IO, Any, Dict, Iterable, Optional
@@ -35,9 +34,9 @@ class HubSpotStream(RESTStream):
     next_page_token_jsonpath = "$.paging.next.after"
 
     # Override in subclass to fetch additional properties
-    properties_object_type = None
+    properties_object_type: Optional[str] = None
     # Used to cache extra properties fetched
-    extra_properties = None
+    extra_properties: Optional[list[str]] = None
 
     # Set if forcing non-search endpoint
     forced_get = False
@@ -47,11 +46,11 @@ class HubSpotStream(RESTStream):
     _force_batch = False
 
     @property
-    def batch_size(self) -> int:
+    def batch_size(self) -> int:  # type: ignore
         return self.config.get("batch_size", 1_000_000)
 
     @property
-    def rest_method(self) -> str:
+    def rest_method(self) -> str:  # type: ignore
         """Returns REST method depending on sync method"""
         # Called by prepare request
         if not self.forced_get and self.replication_method == REPLICATION_INCREMENTAL:
@@ -78,9 +77,8 @@ class HubSpotStream(RESTStream):
     @property
     def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
-        return BearerTokenAuthenticator.create_for_stream(
-            self, self.config.get("hapikey")
-        )
+        token: str = self.config["hapikey"]
+        return BearerTokenAuthenticator.create_for_stream(self, token)
 
     @property
     def http_headers(self) -> dict:
@@ -170,7 +168,8 @@ class HubSpotStream(RESTStream):
 
         replication_key_value = self.get_appropriate_replication_key_value(context)
         self.logger.debug(
-            f"PrepareRequest rep key val: {replication_key_value}, after: {next_page_token}"
+            f"PrepareRequest rep key val: {replication_key_value}, "
+            f"after: {next_page_token}"
         )
 
         if replication_key_value:
@@ -203,7 +202,7 @@ class HubSpotStream(RESTStream):
         if self._appropriate_replication_key_value is not None:
             return self._appropriate_replication_key_value
 
-        replication_key_value: datetime = self.get_starting_timestamp(context)
+        replication_key_value = self.get_starting_timestamp(context)
 
         if self.is_sorted:
             # State dict is empty before sync has started which is exactly what we want
@@ -219,10 +218,7 @@ class HubSpotStream(RESTStream):
                 try:
                     replication_key_value = parse_datetime(start_from)
                 except Exception as e:
-                    logging.error(
-                        f"Could not parse starting date: '{start_from}'",
-                        file=sys.stderr,
-                    )
+                    logging.error(f"Could not parse starting date: '{start_from}'")
                     raise e
 
         if replication_key_value is None:
@@ -272,7 +268,7 @@ class HubSpotStream(RESTStream):
         """Parse the response and return an iterator of result rows."""
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())
 
-    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
         """As needed, append or transform raw data to match expected structure."""
         # Need to copy the replication key to top level so that meltano can read it
         if self.replication_key:
@@ -295,7 +291,7 @@ class HubSpotStream(RESTStream):
         # String like 2022-04-13T07:41:30.007Z
         return parse_datetime(row["properties"][self.replication_key])
 
-    def get_batches(
+    def get_batches(  # noqa: C901
         self,
         batch_config: BatchConfig,
         context: Optional[dict] = None,
@@ -324,12 +320,17 @@ class HubSpotStream(RESTStream):
         with batch_config.storage.fs() as fs:
             for record in self._sync_records(context, write_messages=False):
                 if self._force_batch or chunk_size >= self.batch_size:
-                    gz.close()
+                    if gz:
+                        gz.close()
                     gz = None
-                    f.close()
+                    if f:
+                        f.close()
                     f = None
-                    file_url = fs.geturl(filename)
-                    yield batch_config.encoding, [file_url]
+                    if filename:
+                        file_url = fs.geturl(filename)
+                        yield batch_config.encoding, [file_url]
+                    else:
+                        raise ValueError("Filename is not set!")
 
                     filename = None
 
@@ -342,14 +343,21 @@ class HubSpotStream(RESTStream):
                     f = fs.open(filename, "wb")
                     gz = gzip.GzipFile(fileobj=f, mode="wb")
 
+                if not gz:
+                    raise ValueError("gz not initialized!")
                 gz.write((json.dumps(record, default=str) + "\n").encode())
                 chunk_size += 1
 
             if chunk_size > 0:
-                gz.close()
-                f.close()
-                file_url = fs.geturl(filename)
-                yield batch_config.encoding, [file_url]
+                if gz:
+                    gz.close()
+                if f:
+                    f.close()
+                if filename:
+                    file_url = fs.geturl(filename)
+                    yield batch_config.encoding, [file_url]
+                else:
+                    raise ValueError("Filename is not set!")
 
 
 class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
@@ -433,6 +441,7 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
             if (
                 not self.forced_get
                 and self.replication_method == REPLICATION_INCREMENTAL
+                and next_page_token is not None
                 and int(next_page_token) + 100 >= 10000
             ):
                 self.stream.logger.debug(
