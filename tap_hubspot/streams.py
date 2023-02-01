@@ -529,7 +529,7 @@ class DealsAssociationsStream(HubSpotStream):
   """Deal's associations"""
 
   name = "deals_associations"
-  path = "/crm/v4/objects/deal/?associations=companies,contacts&limit"
+  path = "/crm/v4/objects/deal/?associations=companies,contacts"
   properties_object_type = "deals"
   primary_keys = ["id"]
   replication_key = None
