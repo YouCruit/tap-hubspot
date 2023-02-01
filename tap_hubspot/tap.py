@@ -23,6 +23,9 @@ from tap_hubspot.streams import (
     OwnersStream,
     TasksStream,
     TicketsStream,
+    DealsAssociationsStream,
+    CompanyAssociationsStream,
+    ContactAssociationsStream,
 )
 
 STREAM_TYPES = [
@@ -39,6 +42,10 @@ STREAM_TYPES = [
     MeetingsStream,
     TasksStream,
     NotesStream,
+    # Associations
+    DealsAssociationsStream,
+    CompanyAssociationsStream,
+    ContactAssociationsStream,
 ]
 
 
