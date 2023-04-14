@@ -524,7 +524,7 @@ class OwnersStream(HubSpotStream):
     ).to_dict()
 
 
-### Associations streams
+# Associations streams
 class DealsAssociationsStream(HubSpotStream):
     """Deal's associations"""
 
