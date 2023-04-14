@@ -26,7 +26,7 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 | stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
 | flattening_max_depth| False    | None    | The max depth to flatten schemas. |
-| is_sorted           | False    | None    | If true this override meltanos requirement of returning sorted data. Use to avoid InvalidStreamSortException. |
+| is_sorted           | False    | None    | Useful to manually for incremental jobs running with --full-import |
 
 A full list of supported settings and capabilities is available by running: `tap-hubspot --about`
 
