@@ -72,7 +72,9 @@ class HubSpotStream(RESTStream):
             `True` if stream is sorted. Defaults to `False`.
         """
         # Hubspot has a bug in contacts
-        return self.config.get("is_sorted", self.replication_method == REPLICATION_INCREMENTAL)
+        return self.config.get(
+            "is_sorted", self.replication_method == REPLICATION_INCREMENTAL
+        )
 
     @property
     def authenticator(self) -> BearerTokenAuthenticator:
