@@ -29,23 +29,23 @@ from tap_hubspot.streams import (
 )
 
 STREAM_TYPES = [
-    CompaniesStream,
-    ContactsStream,
-    DealsStream,
-    DealsPipelinesStream,
+    #CompaniesStream,
+    #ContactsStream,
+    #DealsStream,
+    #DealsPipelinesStream,
     OwnersStream,
-    TicketsStream,
+    #TicketsStream,
     # Doing engagements last since
     # they are most likely to run into limits
-    CallsStream,
-    EmailsStream,
-    MeetingsStream,
-    TasksStream,
-    NotesStream,
+    #CallsStream,
+    #EmailsStream,
+    #MeetingsStream,
+    #TasksStream,
+    #NotesStream,
     # Associations
-    DealsAssociationsStream,
-    CompanyAssociationsStream,
-    ContactAssociationsStream,
+    #DealsAssociationsStream,
+    #CompanyAssociationsStream,
+    #ContactAssociationsStream,
 ]
 
 
