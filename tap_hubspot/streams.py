@@ -1,5 +1,7 @@
 """Stream type classes for tap-hubspot."""
 
+from typing import Optional
+
 from singer_sdk import typing as th  # JSON Schema typing helpers
 
 from tap_hubspot.client import HubSpotStream
@@ -9,44 +11,66 @@ class CompaniesStream(HubSpotStream):
     """Companies."""
 
     name = "companies"
-    path = "/crm/v3/objects/companies/search"
+    search_path = "/crm/v3/objects/companies/search"
+    full_path = "/crm/v3/objects/companies"
     properties_object_type = "companies"
     primary_keys = ["id"]
-    replication_key = "hs_lastmodifieddate"
-    schema = th.PropertiesList(
-        th.Property(
-            "id",
-            th.StringType,
-        ),
-        th.Property(
-            "properties",
-            th.StringType,
-        ),
-        th.Property(
-            "createdAt",
-            th.DateTimeType,
-        ),
-        th.Property(
-            "updatedAt",
-            th.DateTimeType,
-        ),
-        th.Property(
-            "archived",
-            th.BooleanType,
-        ),
-        th.Property(
-            "archivedAt",
-            th.DateTimeType,
-        ),
-        th.Property(
-            "associations",
-            th.StringType,
-        ),
-        th.Property(
-            replication_key,
-            th.DateTimeType,
-        ),
-    ).to_dict()
+
+    @property
+    def schema(self):
+        props = th.PropertiesList(
+            th.Property(
+                "id",
+                th.StringType,
+            ),
+            th.Property(
+                "properties",
+                th.StringType,
+            ),
+            th.Property(
+                "createdAt",
+                th.DateTimeType,
+            ),
+            th.Property(
+                "updatedAt",
+                th.DateTimeType,
+            ),
+            th.Property(
+                "archived",
+                th.BooleanType,
+            ),
+            th.Property(
+                "archivedAt",
+                th.DateTimeType,
+            ),
+            th.Property(
+                "associations",
+                th.StringType,
+            ),
+        )
+
+        if self.replication_key:
+            props.append(self.replication_key)
+
+        return props.to_dict()
+
+    @property
+    def replication_key(self) -> Optional[str]:
+        return "hs_lastmodifieddate" if self.is_sorted else None
+
+    @replication_key.setter
+    def replication_key(self, _):
+        "Just to shut Lint up"
+        pass
+
+    @property
+    def path(self) -> str:
+        return self.search_path if self.is_sorted else self.full_path
+
+    @path.setter
+    def path(self, _):
+        "Just to shut Lint up"
+        pass
 
 
 class ContactsStream(HubSpotStream):

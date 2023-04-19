@@ -68,6 +68,16 @@ class TapHubSpot(Tap):
             description="Starts incremental stream from this updated timestamp",
         ),
         th.Property(
+            "no_search",
+            th.BooleanType,
+            required=False,
+            default=False,
+            description=(
+                "Set to True to avoid using the search API"
+                " - implies full table replication"
+            ),
+        ),
+        th.Property(
             "batch_size",
             th.IntegerType,
             required=False,

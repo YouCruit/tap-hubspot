@@ -10,6 +10,7 @@ SAMPLE_CONFIG = {
     "hapikey": os.environ["TAP_HUBSPOT_HAPIKEY"],
     "start_from": "2022-04-13T07:41:30.007Z",
     "test": "yes",
+    "no_search": True,
 }
 
 

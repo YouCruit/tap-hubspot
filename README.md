@@ -1,8 +1,8 @@
-# tap-hubspot
+# `tap-hubspot`
 
-`tap-hubspot` is a Singer tap for HubSpot.
+HubSpot tap class.
 
-Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
+Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 
 ## Capabilities
 
@@ -20,13 +20,13 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 |:--------------------|:--------:|:-------:|:------------|
 | hapikey             | True     | None    | HubSpot private app token |
 | start_from          | False    | None    | Starts incremental stream from this updated timestamp |
+| no_search           | False    |       0 | Set to True to avoid using the search API - implies full table replication |
 | batch_size          | False    | 1000000 | Size of batch files |
 | batch_config        | False    | None    |             |
 | stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
 | flattening_max_depth| False    | None    | The max depth to flatten schemas. |
-| is_sorted           | False    | None    | Useful to manually for incremental jobs running with --full-import |
 
 A full list of supported settings and capabilities is available by running: `tap-hubspot --about`
 
@@ -88,6 +88,12 @@ poetry run tox -e lint
 
 ```bash
 poetry run tox -e format
+```
+
+### Updating readme if you change config
+
+```bash
+poetry run tap-hubspot --about --format=markdown
 ```
 
 ### Testing with [Meltano](https://www.meltano.com)
