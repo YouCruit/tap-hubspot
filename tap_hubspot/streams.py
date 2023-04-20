@@ -56,7 +56,7 @@ class CompaniesStream(HubSpotStream):
 
     @property
     def replication_key(self) -> Optional[str]:
-        return "hs_lastmodifieddate" if self.is_sorted else None
+        return None if self.config.get("no_search", False) else "hs_lastmodifieddate"
 
     @replication_key.setter
     def replication_key(self, _):
@@ -65,7 +65,9 @@ class CompaniesStream(HubSpotStream):
 
     @property
     def path(self) -> str:
-        return self.search_path if self.is_sorted else self.full_path
+        return (
+            self.full_path if self.config.get("no_search", False) else self.search_path
+        )
 
     @path.setter
     def path(self, _):
