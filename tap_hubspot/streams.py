@@ -50,7 +50,12 @@ class CompaniesStream(HubSpotStream):
         )
 
         if self.replication_key:
-            props.append(self.replication_key)
+            props.append(
+                th.Property(
+                    self.replication_key,
+                    th.DateTimeType,
+                )
+            )
 
         return props.to_dict()
 
