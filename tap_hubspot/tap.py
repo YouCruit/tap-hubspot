@@ -16,9 +16,9 @@ from tap_hubspot.streams.companies import CompaniesStream
 from tap_hubspot.streams.company_associations import CompanyAssociationsStream
 from tap_hubspot.streams.contact_associations import ContactAssociationsStream
 from tap_hubspot.streams.contacts import ContactsStream
+from tap_hubspot.streams.deals import DealsStream
 from tap_hubspot.streams.deals_associations import DealsAssociationsStream
 from tap_hubspot.streams.deals_pipelines import DealsPipelinesStream
-from tap_hubspot.streams.deals import DealsStream
 from tap_hubspot.streams.emails import EmailsStream
 from tap_hubspot.streams.meetings import MeetingsStream
 from tap_hubspot.streams.notes import NotesStream

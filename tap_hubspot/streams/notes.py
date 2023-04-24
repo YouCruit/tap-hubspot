@@ -1,6 +1,9 @@
 from typing import Optional
+
 from singer_sdk import typing as th
+
 from tap_hubspot.client import HubSpotStream
+
 
 class NotesStream(HubSpotStream):
     """Notes."""
@@ -42,7 +45,7 @@ class NotesStream(HubSpotStream):
             th.Property(
                 "associations",
                 th.StringType,
-            )
+            ),
         )
 
         if self.replication_key:
@@ -54,7 +57,6 @@ class NotesStream(HubSpotStream):
             )
 
         return props.to_dict()
-
 
     @property
     def replication_key(self) -> Optional[str]:

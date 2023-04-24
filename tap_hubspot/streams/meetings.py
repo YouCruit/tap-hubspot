@@ -1,6 +1,9 @@
 from typing import Optional
+
 from singer_sdk import typing as th  # JSON Schema typing helpers
+
 from tap_hubspot.client import HubSpotStream
+
 
 class MeetingsStream(HubSpotStream):
     """Meetings."""
@@ -42,7 +45,7 @@ class MeetingsStream(HubSpotStream):
             th.Property(
                 "associations",
                 th.StringType,
-            )
+            ),
         )
 
         if self.replication_key:
@@ -54,7 +57,6 @@ class MeetingsStream(HubSpotStream):
             )
 
         return props.to_dict()
-
 
     @property
     def replication_key(self) -> Optional[str]:

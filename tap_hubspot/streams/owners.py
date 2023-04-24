@@ -1,6 +1,8 @@
-from typing import Optional
 from singer_sdk import typing as th  # JSON Schema typing helpers
+
 from tap_hubspot.client import HubSpotStream
+
+
 class OwnersStream(HubSpotStream):
     """Owners."""
 

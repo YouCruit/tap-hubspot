@@ -1,6 +1,10 @@
 from typing import Optional
+
 from singer_sdk import typing as th  # JSON Schema typing helpers
+
 from tap_hubspot.client import HubSpotStream
+
+
 class TasksStream(HubSpotStream):
     """Tasks."""
 
@@ -10,6 +14,7 @@ class TasksStream(HubSpotStream):
     properties_object_type = "tasks"
     primary_keys = ["id"]
     replication_key = "hs_lastmodifieddate"
+
     @property
     def schema(self):
         props = th.PropertiesList(
@@ -40,7 +45,7 @@ class TasksStream(HubSpotStream):
             th.Property(
                 "associations",
                 th.StringType,
-            )
+            ),
         )
 
         if self.replication_key:
