@@ -13,7 +13,6 @@ class EmailsStream(HubSpotStream):
     full_path = "/crm/v3/objects/emails"
     properties_object_type = "emails"
     primary_keys = ["id"]
-    replication_key = "hs_lastmodifieddate"
 
     @property
     def schema(self):

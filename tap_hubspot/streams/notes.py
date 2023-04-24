@@ -13,7 +13,6 @@ class NotesStream(HubSpotStream):
     full_path = "/crm/v3/objects/notes"
     properties_object_type = "notes"
     primary_keys = ["id"]
-    replication_key = "hs_lastmodifieddate"
 
     @property
     def schema(self):

@@ -13,7 +13,6 @@ class MeetingsStream(HubSpotStream):
     full_path = "/crm/v3/objects/meetings"
     properties_object_type = "meetings"
     primary_keys = ["id"]
-    replication_key = "hs_lastmodifieddate"
 
     @property
     def schema(self):

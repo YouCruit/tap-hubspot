@@ -13,7 +13,6 @@ class TasksStream(HubSpotStream):
     full_path = "/crm/v3/objects/tasks"
     properties_object_type = "tasks"
     primary_keys = ["id"]
-    replication_key = "hs_lastmodifieddate"
 
     @property
     def schema(self):

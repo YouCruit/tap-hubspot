@@ -13,7 +13,6 @@ class TicketsStream(HubSpotStream):
     full_path = "/crm/v3/objects/tickets"
     properties_object_type = "tickets"
     primary_keys = ["id"]
-    replication_key = "hs_lastmodifieddate"
 
     @property
     def schema(self):
