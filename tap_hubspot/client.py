@@ -17,6 +17,7 @@ from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.pagination import BaseAPIPaginator
 from singer_sdk.streams import RESTStream
 from singer_sdk.streams.core import REPLICATION_INCREMENTAL
+import sys
 
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
@@ -187,7 +188,7 @@ class HubSpotStream(RESTStream):
                     ]
                 }
             ]
-
+        print(body, file=sys.stderr)
         return body
 
     def get_appropriate_replication_key_value(
