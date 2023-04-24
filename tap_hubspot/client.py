@@ -457,23 +457,3 @@ class HubspotJSONPathPaginator(BaseAPIPaginator[Optional[str]]):
 
         self.stream.logger.debug(f"Paginator: {next_page_token}")
         return next_page_token
-
-    @property
-    def replication_key(self) -> Optional[str]:
-        return None if self.config.get("no_search", False) else "hs_lastmodifieddate"
-
-    @replication_key.setter
-    def replication_key(self, _):
-        "Just to shut Lint up"
-        pass
-
-    @property
-    def path(self) -> str:
-        return (
-            self.full_path if self.config.get("no_search", False) else self.search_path
-        )
-
-    @path.setter
-    def path(self, _):
-        "Just to shut Lint up"
-        pass
