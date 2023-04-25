@@ -11,22 +11,20 @@ from singer_sdk.helpers.capabilities import (
     TapCapabilities,
 )
 
-from tap_hubspot.streams import (
-    CallsStream,
-    CompaniesStream,
-    CompanyAssociationsStream,
-    ContactAssociationsStream,
-    ContactsStream,
-    DealsAssociationsStream,
-    DealsPipelinesStream,
-    DealsStream,
-    EmailsStream,
-    MeetingsStream,
-    NotesStream,
-    OwnersStream,
-    TasksStream,
-    TicketsStream,
-)
+from tap_hubspot.streams.calls import CallsStream
+from tap_hubspot.streams.companies import CompaniesStream
+from tap_hubspot.streams.company_associations import CompanyAssociationsStream
+from tap_hubspot.streams.contact_associations import ContactAssociationsStream
+from tap_hubspot.streams.contacts import ContactsStream
+from tap_hubspot.streams.deals import DealsStream
+from tap_hubspot.streams.deals_associations import DealsAssociationsStream
+from tap_hubspot.streams.deals_pipelines import DealsPipelinesStream
+from tap_hubspot.streams.emails import EmailsStream
+from tap_hubspot.streams.meetings import MeetingsStream
+from tap_hubspot.streams.notes import NotesStream
+from tap_hubspot.streams.owners import OwnersStream
+from tap_hubspot.streams.tasks import TasksStream
+from tap_hubspot.streams.tickets import TicketsStream
 
 STREAM_TYPES = [
     CompaniesStream,
