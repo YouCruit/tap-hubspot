@@ -51,19 +51,19 @@ class ContactsStream(HubSpotStream):
         # the list of properties in hubspot became to long for a request.
         # Error: 414 Client Error: URI Too Long for path
         self.extra_properties = [
-            'email',
-            'firstname',
-            'lastname',
-            'jobtitle',
-            'call_center_candidate_id',
-            'candidate_id',
-            'interested_in_lanefinder_driver_force',
-            'hs_last_sales_activity_timestamp',
-            'hs_lead_status',
-            'hs_searchable_calculated_international_mobile_number',
-            'hubspot_owner_id',
-            'hs_calculated_phone_number',
-            'hs_timezone'
+            "email",
+            "firstname",
+            "lastname",
+            "jobtitle",
+            "call_center_candidate_id",
+            "candidate_id",
+            "interested_in_lanefinder_driver_force",
+            "hs_last_sales_activity_timestamp",
+            "hs_lead_status",
+            "hs_searchable_calculated_international_mobile_number",
+            "hubspot_owner_id",
+            "hs_calculated_phone_number",
+            "hs_timezone",
         ]
 
         if self.replication_key:
