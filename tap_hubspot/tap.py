@@ -47,7 +47,7 @@ STREAM_TYPES = [
     CompanyAssociationsStream,
     ContactAssociationsStream,
     TaskAssociationsStream,
-    TicketsAssociationsStream
+    TicketsAssociationsStream,
 ]
 
 
