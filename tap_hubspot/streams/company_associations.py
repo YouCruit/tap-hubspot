@@ -6,6 +6,9 @@ from tap_hubspot.client import HubSpotStream
 class CompanyAssociationsStream(HubSpotStream):
     """Company's associations."""
 
+    def get_properties(self):
+        return []
+
     name = "company_associations"
     path = "/crm/v4/objects/company/?associations=contacts,deals"
     properties_object_type = "companies"

@@ -3,15 +3,15 @@ from singer_sdk import typing as th  # JSON Schema typing helpers
 from tap_hubspot.client import HubSpotStream
 
 
-class ContactAssociationsStream(HubSpotStream):
-    """Contact's associations."""
+class TaskAssociationsStream(HubSpotStream):
+    """Task's associations."""
 
     def get_properties(self):
         return []
 
-    name = "contact_associations"
-    path = "/crm/v4/objects/contact/?associations=companies,deals"
-    properties_object_type = "contacts"
+    name = "task_associations"
+    path = "/crm/v4/objects/task/?associations=contacts"
+    properties_object_type = "task"
     primary_keys = ["id"]
     replication_key = None
     schema = th.PropertiesList(
