@@ -24,7 +24,9 @@ from tap_hubspot.streams.meetings import MeetingsStream
 from tap_hubspot.streams.notes import NotesStream
 from tap_hubspot.streams.owners import OwnersStream
 from tap_hubspot.streams.tasks import TasksStream
+from tap_hubspot.streams.task_associations import TaskAssociationsStream
 from tap_hubspot.streams.tickets import TicketsStream
+from tap_hubspot.streams.tickets_associations import TicketsAssociationsStream
 
 STREAM_TYPES = [
     CompaniesStream,
@@ -44,6 +46,8 @@ STREAM_TYPES = [
     DealsAssociationsStream,
     CompanyAssociationsStream,
     ContactAssociationsStream,
+    TaskAssociationsStream,
+    TicketsAssociationsStream
 ]
 
 
