@@ -27,6 +27,7 @@ from tap_hubspot.streams.task_associations import TaskAssociationsStream
 from tap_hubspot.streams.tasks import TasksStream
 from tap_hubspot.streams.tickets import TicketsStream
 from tap_hubspot.streams.tickets_associations import TicketsAssociationsStream
+from tap_hubspot.streams.tickets_pipelines import TicketsPipelinesStream
 
 STREAM_TYPES = [
     CompaniesStream,
@@ -35,6 +36,7 @@ STREAM_TYPES = [
     DealsPipelinesStream,
     OwnersStream,
     TicketsStream,
+    TicketsPipelinesStream,
     # Doing engagements last since
     # they are most likely to run into limits
     CallsStream,
