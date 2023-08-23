@@ -10,7 +10,8 @@ class TaskAssociationsStream(HubSpotStream):
         return []
 
     name = "task_associations"
-    path = "/crm/v4/objects/task/?associations=contacts"
+    path = "/crm/v4/objects/task/?associations=contacts\
+            &propertiesWithHistory=hubspot_owner_id"
     properties_object_type = "task"
     primary_keys = ["id"]
     replication_key = None
@@ -29,6 +30,10 @@ class TaskAssociationsStream(HubSpotStream):
         ),
         th.Property(
             "associations",
+            th.StringType,
+        ),
+        th.Property(
+            "propertiesWithHistory",
             th.StringType,
         ),
     ).to_dict()
