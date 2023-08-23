@@ -10,7 +10,7 @@ class CompanyAssociationsStream(HubSpotStream):
         return []
 
     name = "company_associations"
-    path = "/crm/v4/objects/company/?associations=contacts,deals"
+    path = "/crm/v4/objects/company/?associations=contacts,deals&propertiesWithHistory=hubspot_owner_id"
     properties_object_type = "companies"
     primary_keys = ["id"]
     replication_key = None
@@ -29,6 +29,10 @@ class CompanyAssociationsStream(HubSpotStream):
         ),
         th.Property(
             "associations",
+            th.StringType,
+        ),
+        th.Property(
+            "propertiesWithHistory",
             th.StringType,
         ),
     ).to_dict()
