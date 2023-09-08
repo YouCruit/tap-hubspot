@@ -114,7 +114,9 @@ class HubSpotStream(RESTStream):
 
         params: dict = {
             # Hubspot sets a limit of most 100 per request. Default is 10
-            "limit": self.config.get("limit", 100 if not self.request_limit else self.request_limit)
+            "limit": self.config.get(
+                "limit", 100 if not self.request_limit else self.request_limit
+            )
         }
         props_to_get = self.get_properties()
         if props_to_get:
