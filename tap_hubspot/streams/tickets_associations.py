@@ -12,8 +12,8 @@ class TicketsAssociationsStream(HubSpotStream):
     request_limit = 50
 
     name = "tickets_associations"
-    path = """/crm/v4/objects/tickets/?associations=companies,contacts
-    &propertiesWithHistory=hubspot_owner_id"""
+    path = "/crm/v4/objects/tickets/?associations=companies,contacts" \
+           "&propertiesWithHistory=hubspot_owner_id"
     properties_object_type = "tickets"
     primary_keys = ["id"]
     replication_key = None
