@@ -9,6 +9,8 @@ class TaskAssociationsStream(HubSpotStream):
     def get_properties(self):
         return []
 
+    request_limit = 50
+
     name = "task_associations"
     path = "/crm/v4/objects/task/?associations=contacts\
             &propertiesWithHistory=hubspot_owner_id"

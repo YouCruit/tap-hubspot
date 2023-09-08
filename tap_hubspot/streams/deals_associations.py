@@ -9,6 +9,8 @@ class DealsAssociationsStream(HubSpotStream):
     def get_properties(self):
         return []
 
+    request_limit = 50
+
     name = "deals_associations"
     path = "/crm/v4/objects/deal/?associations=companies,contacts\
             &propertiesWithHistory=hubspot_owner_id"
