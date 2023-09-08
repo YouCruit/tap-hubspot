@@ -41,6 +41,9 @@ class HubSpotStream(RESTStream):
     # Set if forcing non-search endpoint
     forced_get = False
 
+    # Limit of records on the page
+    request_limit = 100
+
     # Internally used to workaround HubSpot's 10K query limit
     _appropriate_replication_key_value: Optional[datetime] = None
     _force_batch = False

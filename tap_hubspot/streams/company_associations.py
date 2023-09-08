@@ -12,8 +12,8 @@ class CompanyAssociationsStream(HubSpotStream):
     request_limit = 50
 
     name = "company_associations"
-    path = "/crm/v4/objects/company/?associations=contacts,deals\
-            &propertiesWithHistory=hubspot_owner_id"
+    path = """/crm/v4/objects/company/?associations=contacts,deals
+    &propertiesWithHistory=hubspot_owner_id"""
     properties_object_type = "companies"
     primary_keys = ["id"]
     replication_key = None
