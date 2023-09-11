@@ -41,6 +41,9 @@ class HubSpotStream(RESTStream):
     # Set if forcing non-search endpoint
     forced_get = False
 
+    # Limit of records on the page
+    request_limit = 100
+
     # Internally used to workaround HubSpot's 10K query limit
     _appropriate_replication_key_value: Optional[datetime] = None
     _force_batch = False
@@ -114,7 +117,9 @@ class HubSpotStream(RESTStream):
 
         params: dict = {
             # Hubspot sets a limit of most 100 per request. Default is 10
-            "limit": self.config.get("limit", 100)
+            "limit": self.config.get(
+                "limit", 100 if not self.request_limit else self.request_limit
+            )
         }
         props_to_get = self.get_properties()
         if props_to_get:
