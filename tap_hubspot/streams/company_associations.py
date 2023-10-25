@@ -64,8 +64,8 @@ class CompanyAssociationsStream(HubSpotStream):
                                 th.IntegerType,
                             ),
                         ),
-                    )
+                    ),
                 )
-            )
+            ),
         ),
     ).to_dict()
