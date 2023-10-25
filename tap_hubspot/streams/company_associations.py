@@ -38,6 +38,34 @@ class CompanyAssociationsStream(HubSpotStream):
         ),
         th.Property(
             "propertiesWithHistory",
-            th.StringType,
+            th.ObjectType(
+                th.Property(
+                    "hubspot_owner_id",
+                    th.ArrayType(
+                        th.PropertiesList(
+                            th.Property(
+                                "value",
+                                th.StringType,
+                            ),
+                            th.Property(
+                                "timestamp",
+                                th.DateTimeType,
+                            ),
+                            th.Property(
+                                "sourceType",
+                                th.StringType,
+                            ),
+                            th.Property(
+                                "sourceId",
+                                th.StringType,
+                            ),
+                            th.Property(
+                                "updatedByUserId",
+                                th.IntegerType,
+                            ),
+                        ),
+                    )
+                )
+            )
         ),
     ).to_dict()
