@@ -36,4 +36,8 @@ class CompanyAssociationsStream(HubSpotStream):
             "associations",
             th.StringType,
         ),
+        th.Property(
+            "propertiesWithHistory",
+            th.StringType,
+        ),
     ).to_dict()

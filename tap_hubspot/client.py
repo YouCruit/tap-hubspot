@@ -285,6 +285,9 @@ class HubSpotStream(RESTStream):
         if "associations" in row:
             jsonassoc = json.dumps(row.get("associations"))
             row["associations"] = jsonassoc
+        if "propertiesWithHistory" in row:
+            jsonassoc = json.dumps(row.get("propertiesWithHistory"))
+            row["propertiesWithHistory"] = jsonassoc
         return row
 
     def get_replication_key_value(self, row: dict) -> Optional[datetime]:
