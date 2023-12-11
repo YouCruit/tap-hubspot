@@ -31,7 +31,7 @@ from tap_hubspot.streams.tickets_pipelines import TicketsPipelinesStream
 
 STREAM_TYPES = [
     CompaniesStream,
-    ContactsStream,
+    # ContactsStream,
     DealsStream,
     DealsPipelinesStream,
     OwnersStream,
