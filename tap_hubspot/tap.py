@@ -31,7 +31,7 @@ from tap_hubspot.streams.tickets_pipelines import TicketsPipelinesStream
 
 STREAM_TYPES = [
     CompaniesStream,
-    # ContactsStream,
+    ContactsStream,
     DealsStream,
     DealsPipelinesStream,
     OwnersStream,
@@ -39,7 +39,7 @@ STREAM_TYPES = [
     TicketsPipelinesStream,
     # Doing engagements last since
     # they are most likely to run into limits
-    # CallsStream,
+    CallsStream,
     EmailsStream,
     MeetingsStream,
     TasksStream,
