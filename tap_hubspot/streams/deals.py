@@ -333,7 +333,7 @@ class DealsStream(HubSpotStream):
             "hs_all_accessible_team_ids",
             "num_associated_contacts",
             "closed_lost_reason",
-            "closed_won_reason"
+            "closed_won_reason",
         ]
 
         if self.replication_key:
