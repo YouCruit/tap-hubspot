@@ -78,6 +78,18 @@ class HubSpotStream(RESTStream):
         return yes_search and self.replication_method == REPLICATION_INCREMENTAL
 
     @property
+    def check_sorted(self) -> bool:
+        """Check if stream is sorted.
+
+        This setting enables additional checks which may trigger
+        `InvalidStreamSortException` if records are found which are unsorted.
+
+        Returns:
+            `True` if sorting is checked. Defaults to `True`.
+        """
+        return False
+
+    @property
     def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
         token: str = self.config["hapikey"]
