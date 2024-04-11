@@ -260,7 +260,7 @@ class DealsStream(HubSpotStream):
             "num_associated_contacts",
             "closed_lost_reason",
             "closed_won_reason",
-            "complete_reason"
+            "complete_reason",
         ]
 
         if self.replication_key:
